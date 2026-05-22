@@ -1,34 +1,148 @@
 # Playlist Saver
 
-A small local app for downloading MP3 versions of the tracks in a public Spotify playlist. It reads the playlist's track list from Spotify's public embed page, finds each song on YouTube Music, lets you review the matches one-by-one, and then downloads them all at once. Everything runs on your own machine — no servers, no logins.
+A small program for Windows that saves a Spotify playlist as MP3 files on your computer. Paste the playlist link, pick the matches that look right, click one button. Done.
 
-> **For personal use only.** This tool helps you download audio from public sources for personal/offline listening. Don't use it for anything commercial. Respect the terms of service of Spotify and YouTube, and the rights of artists.
+No installs. No accounts. No setup.
 
-## What it does
+---
 
-1. You paste a public Spotify playlist URL.
-2. The app fetches the playlist's track list directly from Spotify's public embed page (no Spotify account or API key needed).
-3. For each track, it searches YouTube Music for the best match.
-4. The app shows you the matches side-by-side and lets you:
-   - Cycle through alternate matches per track (`prev` / `next`)
-   - Skip individual tracks
-5. When everything looks right, click **Download all**. Audio is fetched with `yt-dlp`, converted to MP3 with `ffmpeg`, and tagged with title/artist/cover art using `mutagen`.
+## Download
 
-The result is a folder of clean, tagged `.mp3` files.
+### [⬇ Click here to download Playlist Saver](https://github.com/RodrigoEMDM/SpotifyToMP3/releases/latest/download/PlaylistSaver.exe)
+
+That link gives you one file: **`PlaylistSaver.exe`**. Save it anywhere you want — Desktop, Documents, a USB drive, wherever. The MP3s you download will appear in a folder right next to that file.
+
+---
 
 ## How to use it
 
-### Option A — Pre-built `.exe` (Windows, easiest)
+### Step 1 — Get past the Windows warning (first time only)
 
-Grab `PlaylistSaver.exe` from the [Releases](../../releases) page. Double-click it.
+Because this program isn't signed by a big company, Windows will show a scary blue warning the first time you open it. Here's how to handle it:
 
-- A small console window opens, and your default browser opens to `http://127.0.0.1:5000`.
-- MP3s land in a `downloads/` folder created next to the `.exe`.
-- To quit, close the console window.
+**Easiest way (recommended):**
+1. Find the `PlaylistSaver.exe` file you just downloaded.
+2. **Right-click** it → choose **Properties**.
+3. At the bottom of the window, check the box that says **Unblock**.
+4. Click **Apply** → **OK**.
 
-> The first time you run it, Windows SmartScreen will warn you about an unrecognized publisher (the `.exe` is unsigned). Click **More info → Run anyway**, or right-click the file → Properties → check **Unblock** → Apply, then try again.
+Now when you open it, no warning.
 
-### Option B — Run from source (any OS)
+**If you skipped that and got the warning anyway:**
+A blue box appears saying *"Windows protected your PC"*.
+1. Click the small text **"More info"**.
+2. A new button appears: **"Run anyway"**. Click it.
+
+This is normal for any program made by an individual instead of a big company. Your antivirus may also pop up — it's safe to allow.
+
+### Step 2 — Open the program
+
+Double-click **`PlaylistSaver.exe`**.
+
+Two things happen:
+- A small black window appears with some text. **Don't close it** — that's the program running.
+- Your web browser opens to a page that looks like this:
+
+> The page title says "Playlist Saver" with a box to paste a link.
+
+If the browser doesn't open automatically, open Chrome / Edge / Firefox and go to: **http://127.0.0.1:5000**
+
+### Step 3 — Get a Spotify playlist link
+
+1. Open Spotify (app or website).
+2. Find the playlist you want.
+3. Click the three dots **`...`** next to the playlist name → **Share** → **Copy link to playlist**.
+
+> The playlist has to be **public**. If it's private, this won't work. Most playlists are public by default.
+
+### Step 4 — Paste and load
+
+1. Paste the link into the box on the Playlist Saver page.
+2. Click **Load playlist**.
+3. Wait a few seconds. The list of songs appears, each one paired with a match from YouTube Music.
+
+### Step 5 — Check the matches (optional)
+
+For each song, the program shows the version it found on YouTube Music — with a thumbnail, the channel name, and how long it is.
+
+- If a match looks wrong, click **`next →`** to try a different version.
+- If you don't want a song downloaded at all, click **`Skip this track`**.
+- Don't want to bother checking? Skip this step — the first match is usually right.
+
+### Step 6 — Download
+
+Click the big green **Download all** button at the bottom.
+
+Wait. Each song takes a few seconds. You'll see a progress bar and the rows turn green as they finish.
+
+When it says **"Finished"**, your MP3s are in a folder called **`downloads`** right next to `PlaylistSaver.exe`.
+
+### Step 7 — Done
+
+Close the black window to quit. Open the `downloads` folder and listen to your music.
+
+---
+
+## Important notes
+
+- **For personal use only.** Don't sell these files or share them publicly. Respect the artists.
+- **Sound quality:** Songs come from YouTube Music at 192 kbps. Good for casual listening; not studio quality.
+- **Sometimes a song won't have a match** — that's normal. The row will say "No matches found" and that song gets skipped automatically.
+- **MP3s have title, artist, and album cover** baked in, so they look right in any music player.
+
+---
+
+## Help / troubleshooting
+
+<details>
+<summary><b>Windows says it's a virus</b></summary>
+
+Some antivirus programs flag this kind of file. It's not a virus — it's a flagging of the *tool* used to bundle it (PyInstaller), which is also used by some malware authors. The full source code is in this repository so you can verify it.
+
+If your AV deletes the file, you may need to add an exception, or build the program yourself (see "For developers" below).
+</details>
+
+<details>
+<summary><b>Browser doesn't open by itself</b></summary>
+
+Open Chrome / Edge / Firefox manually and go to **http://127.0.0.1:5000** while the black window is still open.
+</details>
+
+<details>
+<summary><b>"Is the playlist public?" error</b></summary>
+
+The playlist must be public. On Spotify: open the playlist → three dots `...` → if you see **"Make public"**, click it.
+</details>
+
+<details>
+<summary><b>"This job is no longer on the server"</b></summary>
+
+This happens if you closed the black window and reopened it, but left the browser tab open. Just reload the browser tab and paste the link again.
+</details>
+
+<details>
+<summary><b>One specific song won't download</b></summary>
+
+Click **`next →`** on that row to try a different YouTube Music match. Some songs only exist as covers or live versions on YouTube — pick the closest one or skip it.
+</details>
+
+---
+
+## For developers
+
+<details>
+<summary><b>How it works</b></summary>
+
+- **Spotify metadata** is scraped from the public embed page at `https://open.spotify.com/embed/playlist/<id>`. No API key required.
+- **Search** uses `ytmusicapi` with the "songs" filter for clean artist-uploaded tracks. Falls back to regular YouTube search if YouTube Music has no match.
+- **Download** uses `yt-dlp`; **conversion** uses `ffmpeg`; **tagging** uses `mutagen`.
+- **UI** is a Flask app serving a single HTML page that polls a background worker for progress.
+
+Everything runs on `127.0.0.1` (your own computer). Nothing is sent to a server I control.
+</details>
+
+<details>
+<summary><b>Run from source</b></summary>
 
 Requires Python 3.10+ and `ffmpeg` on your `PATH`.
 
@@ -39,47 +153,34 @@ pip install -r requirements.txt
 python app.py
 ```
 
-Then open `http://127.0.0.1:5000` in a browser.
+Then open `http://127.0.0.1:5000`.
+</details>
 
-## Building the `.exe` yourself
+<details>
+<summary><b>Build the .exe yourself</b></summary>
 
-Requires Python 3.10+ on Windows.
-
-1. Download `ffmpeg-release-essentials.zip` from <https://www.gyan.dev/ffmpeg/builds/>, extract it, and copy `ffmpeg.exe` and `ffprobe.exe` from its `bin/` folder into the project root (next to `app.py`).
-2. Install dependencies and run the build:
-   ```
+1. Download `ffmpeg-release-essentials.zip` from <https://www.gyan.dev/ffmpeg/builds/>, extract it, and copy `ffmpeg.exe` + `ffprobe.exe` from its `bin/` folder into the project root.
+2. ```
    pip install -r requirements.txt
    python build.py
    ```
-3. The output is `dist\PlaylistSaver.exe` — a single self-contained file you can send to anyone.
+3. Output: `dist\PlaylistSaver.exe`.
+</details>
 
-## How it works
-
-- **Spotify metadata** — scraped from the public embed page at `https://open.spotify.com/embed/playlist/<id>`. No API key required, but the playlist must be public.
-- **Search** — `ytmusicapi` queries YouTube Music with the "songs" filter, which returns clean artist-uploaded tracks (no music videos, lyric videos, or covers by default). If a track has no YouTube Music match, it falls back to a regular YouTube search.
-- **Download** — `yt-dlp` fetches the chosen audio stream; `ffmpeg` converts it to 192 kbps MP3.
-- **Tagging** — `mutagen` writes title/artist/album tags and embeds the playlist's cover art.
-- **UI** — a tiny Flask app serving a single HTML page; it polls a background worker for progress updates.
-
-## Caveats
-
-- **Public playlists only.** The embed scrape only works for public playlists. Private/collaborative playlists won't work.
-- **It's a YouTube Music match, not the original Spotify audio.** Sometimes the top match isn't perfect (e.g., a re-recorded or remastered version). That's why the per-track "next match" / "skip" controls exist.
-- **No album field.** The Spotify embed page exposes title + artist + duration but not the album. MP3s get title/artist tags + the playlist's cover art instead.
-- **YouTube can rate-limit.** Big playlists (hundreds of tracks) downloaded back-to-back might hit a slowdown. Smaller playlists work without issue.
-
-## Project layout
+<details>
+<summary><b>Project layout</b></summary>
 
 ```
-app.py              Flask app + worker logic
+app.py              Flask app + background worker
 build.py            PyInstaller build script
-requirements.txt    Python deps
+requirements.txt    Python dependencies
 templates/
   index.html        Single-page UI
-ffmpeg.exe          (added by you before building)
-ffprobe.exe         (added by you before building)
+README.md
+.gitignore
 ```
+</details>
 
-## License
+---
 
-For personal/educational use. No warranty.
+*Made for personal use. Not affiliated with Spotify or YouTube.*
