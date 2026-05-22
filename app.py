@@ -9,6 +9,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from flask import Flask, render_template, request, jsonify
+import flask.cli
 
 import yt_dlp
 from ytmusicapi import YTMusic
@@ -132,7 +133,6 @@ def get_playlist_tracks(playlist_id):
         tracks.append({
             "title": title,
             "artist": t.get("subtitle") or "",
-            "album": "",
             "cover_url": playlist_cover,
             "duration_ms": t.get("duration") or t.get("durationMilliseconds"),
         })
@@ -175,7 +175,6 @@ def search_ytmusic(query, n=SEARCH_RESULTS_PER_TRACK):
             "title": r.get("title"),
             "url": f"https://music.youtube.com/watch?v={vid}",
             "channel": channel_label,
-            "duration": dur_s,
             "duration_str": dur_str,
             "thumbnail": thumb,
             "source": "YouTube Music",
@@ -205,7 +204,6 @@ def search_youtube_fallback(query, n=SEARCH_RESULTS_PER_TRACK):
             "title": e.get("title"),
             "url": url,
             "channel": e.get("channel") or e.get("uploader") or "",
-            "duration": e.get("duration"),
             "duration_str": format_duration(e.get("duration")),
             "thumbnail": thumb,
             "source": "YouTube",
@@ -253,8 +251,6 @@ def download_from_url(url, track):
         audio = EasyID3(mp3_path)
     audio["title"] = track["title"]
     audio["artist"] = track["artist"]
-    if track.get("album"):
-        audio["album"] = track["album"]
     audio.save()
 
     if track.get("cover_url"):
@@ -466,7 +462,5 @@ if __name__ == "__main__":
     print("=" * 52)
     print()
     threading.Timer(1.5, _open_browser).start()
-    # Disable the Flask startup banner — we printed our own above.
-    import flask.cli
     flask.cli.show_server_banner = lambda *a, **kw: None
     app.run(host="127.0.0.1", port=5000, debug=False)
