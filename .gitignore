@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+
+# PyInstaller build output
+build/
+dist/
+*.spec
+
+# ffmpeg binaries (download these locally before building, don't commit)
+ffmpeg.exe
+ffprobe.exe
+
+# App runtime output
+downloads/
+
+# Leftover from older Spotify-API version (no longer used)
+.env
+.env.example
+.cache
+
+# Editors
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store

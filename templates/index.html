@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Playlist Saver</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --border: #e3e6ea;
+    --border-strong: #cdd2d8;
+    --text: #1a1d21;
+    --text-muted: #5b6470;
+    --text-faint: #8a939e;
+    --accent: #1DB954;
+    --accent-hover: #19a449;
+    --accent-soft: #e6f7ec;
+    --warn: #b58105;
+    --warn-soft: #fff6d8;
+    --warn-border: #ead38a;
+    --ok: #1f7a3a;
+    --ok-soft: #e6f5ec;
+    --ok-border: #b4dcc1;
+    --fail: #b3261e;
+    --fail-soft: #fce9e8;
+    --fail-border: #ecbcb9;
+    --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 1px 6px rgba(0,0,0,0.06);
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: var(--text);
+    margin: 0;
+    padding: 0 20px 120px 20px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 1040px; margin: 0 auto; }
+
+  header {
+    padding: 28px 0 18px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 22px;
+  }
+  header h1 {
+    font-size: 22px; font-weight: 700; margin: 0; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .logo-dot {
+    width: 14px; height: 14px; border-radius: 50%; background: var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-soft);
+    flex-shrink: 0;
+  }
+  header .subtitle {
+    color: var(--text-muted); font-size: 13px; margin-top: 6px;
+  }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px; box-shadow: var(--shadow);
+  }
+
+  .url-card { margin-bottom: 14px; }
+  .url-form { display: flex; gap: 8px; align-items: stretch; }
+  .url-form input[type=text] {
+    flex: 1; padding: 10px 12px; font-size: 14px;
+    border: 1px solid var(--border-strong); border-radius: 8px;
+    background: #fff; color: var(--text);
+    transition: border-color 120ms, box-shadow 120ms;
+    font-family: inherit;
+  }
+  .url-form input[type=text]:focus {
+    outline: none; border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  button {
+    font-family: inherit; font-size: 13px; font-weight: 500;
+    padding: 8px 14px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--border-strong); background: #fff; color: var(--text);
+    transition: background 120ms, border-color 120ms, color 120ms, transform 60ms;
+  }
+  button:hover:not(:disabled) { background: #f3f4f6; }
+  button:active:not(:disabled) { transform: translateY(1px); }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+  button.primary {
+    background: var(--accent); border-color: var(--accent); color: #fff;
+  }
+  button.primary:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
+  button.primary:disabled { background: #b6c8be; border-color: #b6c8be; }
+  button.ghost { background: transparent; }
+
+  .status-bar {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
+    font-size: 13px; color: var(--text-muted);
+  }
+  .progress {
+    flex: 1; height: 6px; background: var(--border); border-radius: 999px; overflow: hidden;
+    display: none;
+  }
+  .progress.show { display: block; }
+  .progress > div {
+    height: 100%; background: var(--accent); width: 0;
+    transition: width 240ms ease;
+  }
+  .status-text { font-weight: 500; color: var(--text); }
+
+  .empty {
+    text-align: center; color: var(--text-faint); padding: 60px 20px;
+    border: 1px dashed var(--border-strong); border-radius: 10px;
+    background: var(--surface);
+  }
+  .empty .big { font-size: 15px; color: var(--text-muted); margin-bottom: 6px; }
+  .empty .small { font-size: 12px; }
+
+  .track-row {
+    display: flex; gap: 14px; align-items: center;
+    padding: 10px 12px; margin-bottom: 8px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; box-shadow: var(--shadow);
+    transition: background 160ms, border-color 160ms, opacity 160ms;
+  }
+  .track-row.skipped { opacity: 0.5; background: #fafbfc; }
+  .track-row.downloading {
+    background: var(--warn-soft); border-color: var(--warn-border);
+  }
+  .track-row.done-ok {
+    background: var(--ok-soft); border-color: var(--ok-border);
+  }
+  .track-row.done-fail {
+    background: var(--fail-soft); border-color: var(--fail-border);
+  }
+
+  .col-num {
+    width: 26px; color: var(--text-faint); font-size: 12px; text-align: right; flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .col-spotify { flex: 1.1; min-width: 0; }
+  .col-arrow { color: var(--text-faint); font-size: 16px; flex-shrink: 0; }
+  .col-yt { flex: 1.7; display: flex; gap: 10px; align-items: center; min-width: 0; }
+  .col-actions { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; min-width: 130px; }
+
+  .thumb {
+    width: 96px; height: 54px; object-fit: cover; flex-shrink: 0;
+    background: #eef0f3; border-radius: 6px; border: 1px solid var(--border);
+  }
+  .yt-info { min-width: 0; flex: 1; }
+  .title-line {
+    font-weight: 600; font-size: 13.5px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .meta-line {
+    color: var(--text-muted); font-size: 12px; margin-top: 1px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .meta-line a { color: var(--accent); text-decoration: none; }
+  .meta-line a:hover { text-decoration: underline; }
+  .pos-line { font-size: 11px; color: var(--text-faint); margin-top: 1px; }
+
+  .tag {
+    display: inline-block; font-size: 10px; font-weight: 500;
+    padding: 1px 6px; margin-left: 6px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--accent-hover);
+    vertical-align: middle;
+  }
+  .tag.yt { background: #fee2e2; color: #b91c1c; }
+  .tag.status-ok { background: var(--ok-soft); color: var(--ok); }
+  .tag.status-fail { background: var(--fail-soft); color: var(--fail); }
+  .tag.status-dl { background: var(--warn-soft); color: var(--warn); }
+  .tag.status-skip { background: #e5e7eb; color: #4b5563; }
+
+  .actions-row { display: flex; gap: 4px; }
+  .actions-row button { padding: 4px 8px; font-size: 11px; min-width: 0; flex: 1; }
+  .skip-btn { font-size: 11px; padding: 4px 8px; }
+
+  .no-match { color: var(--fail); font-style: italic; font-size: 13px; }
+  .searching-row { color: var(--text-faint); font-size: 12px; font-style: italic; }
+
+  #bottom-bar {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.96);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    border-top: 1px solid var(--border);
+    padding: 12px 20px; display: none;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.04);
+  }
+  #bottom-bar.show { display: block; }
+  #bottom-bar .inner {
+    max-width: 1040px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  }
+  .summary {
+    display: flex; gap: 14px; font-size: 12px; color: var(--text-muted);
+  }
+  .summary b { color: var(--text); font-weight: 600; }
+  #download-all {
+    padding: 11px 22px; font-size: 14px; font-weight: 600;
+  }
+
+  details.log-details {
+    margin-top: 16px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow);
+  }
+  details.log-details summary {
+    cursor: pointer; padding: 10px 14px; font-size: 13px; color: var(--text-muted);
+    user-select: none;
+  }
+  details.log-details summary:hover { color: var(--text); }
+  #log {
+    white-space: pre-wrap; background: #fafbfc; padding: 12px 14px;
+    border-top: 1px solid var(--border);
+    max-height: 280px; overflow-y: auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11.5px; color: var(--text-muted); margin: 0;
+  }
+
+  footer {
+    margin-top: 24px; padding: 14px 0; color: var(--text-faint);
+    font-size: 11.5px; text-align: center;
+  }
+
+  @media (max-width: 720px) {
+    .col-yt { flex-basis: 100%; }
+    .track-row { flex-wrap: wrap; }
+    .col-actions { min-width: 100%; flex-direction: row; }
+    .col-actions .actions-row { flex: 1; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1><span class="logo-dot"></span>Playlist Saver</h1>
+    <div class="subtitle">Paste a public Spotify playlist link. Review each match from YouTube Music, then download all at once. Runs entirely on your computer.</div>
+  </header>
+
+  <div class="card url-card">
+    <form id="form" class="url-form">
+      <input type="text" name="url" id="url" autocomplete="off"
+             placeholder="https://open.spotify.com/playlist/..." required>
+      <button type="submit" id="go" class="primary">Load playlist</button>
+    </form>
+  </div>
+
+  <div class="status-bar" id="status-bar" style="display:none">
+    <div class="status-text" id="status-text"></div>
+    <div class="progress" id="progress"><div id="progress-fill"></div></div>
+  </div>
+
+  <div id="tracks-area">
+    <div class="empty" id="empty-state">
+      <div class="big">No playlist loaded yet.</div>
+      <div class="small">Paste a public Spotify playlist URL above and click Load playlist.</div>
+    </div>
+    <div id="tracks"></div>
+  </div>
+
+  <details class="log-details" id="log-details" style="display:none">
+    <summary>Activity log</summary>
+    <pre id="log"></pre>
+  </details>
+
+  <footer>
+    Runs locally on your machine. Audio is sourced from YouTube Music search results.
+  </footer>
+</div>
+
+<div id="bottom-bar">
+  <div class="inner">
+    <div class="summary" id="summary"></div>
+    <button id="download-all" class="primary" disabled>Download all</button>
+  </div>
+</div>
+
+<script>
+  const form = document.getElementById('form');
+  const goBtn = document.getElementById('go');
+  const statusBar = document.getElementById('status-bar');
+  const statusText = document.getElementById('status-text');
+  const progress = document.getElementById('progress');
+  const progressFill = document.getElementById('progress-fill');
+  const tracksDiv = document.getElementById('tracks');
+  const emptyState = document.getElementById('empty-state');
+  const bottomBar = document.getElementById('bottom-bar');
+  const summary = document.getElementById('summary');
+  const downloadAllBtn = document.getElementById('download-all');
+  const logEl = document.getElementById('log');
+  const logDetails = document.getElementById('log-details');
+
+  let jobId = null;
+  let polling = false;
+  let refreshTimer = null;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    resetUI();
+    goBtn.disabled = true;
+    setStatus('Starting...');
+    try {
+      const r = await fetch('/download', { method: 'POST', body: new FormData(form) });
+      const data = await r.json();
+      if (data.error) {
+        setStatus('Error: ' + data.error);
+        goBtn.disabled = false;
+        return;
+      }
+      jobId = data.job_id;
+      emptyState.style.display = 'none';
+      if (!polling) { polling = true; poll(); }
+    } catch (e) {
+      setStatus('Network error: ' + e.message);
+      goBtn.disabled = false;
+    }
+  });
+
+  downloadAllBtn.addEventListener('click', async () => {
+    if (!jobId) return;
+    downloadAllBtn.disabled = true;
+    await fetch('/start_download/' + jobId, { method: 'POST' });
+  });
+
+  async function trackAction(trackIndex, action) {
+    if (!jobId) return;
+    await fetch('/track_action/' + jobId, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'track_index=' + trackIndex + '&action=' + encodeURIComponent(action),
+    });
+    if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
+    poll();
+  }
+
+  function setStatus(text) {
+    statusBar.style.display = '';
+    statusText.textContent = text;
+  }
+  function setProgress(done, total) {
+    if (total > 0) {
+      progress.classList.add('show');
+      progressFill.style.width = Math.round((done / total) * 100) + '%';
+    } else {
+      progress.classList.remove('show');
+      progressFill.style.width = '0%';
+    }
+  }
+
+  function resetUI() {
+    if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
+    polling = false;
+    jobId = null;
+    tracksDiv.innerHTML = '';
+    renderedRows.clear();
+    bottomBar.classList.remove('show');
+    logEl.textContent = '';
+    logDetails.style.display = 'none';
+    setProgress(0, 0);
+    progress.classList.remove('show');
+  }
+
+  async function poll() {
+    if (!jobId) return;
+    try {
+      const r = await fetch('/status/' + jobId);
+      if (r.status === 404) {
+        setStatus('This job is no longer on the server (was the server restarted?). Load a playlist again to continue.');
+        polling = false;
+        jobId = null;
+        goBtn.disabled = false;
+        return;
+      }
+      const j = await r.json();
+      render(j);
+      if (j.status === 'done' || j.status === 'error') {
+        polling = false;
+        goBtn.disabled = false;
+        return;
+      }
+    } catch (e) {
+      setStatus('Network error, retrying...');
+    }
+    refreshTimer = setTimeout(poll, 900);
+  }
+
+  function fmtMs(ms) {
+    if (!ms) return '?';
+    const s = Math.floor(ms / 1000);
+    return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+  }
+  function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function sourceTag(source) {
+    if (!source) return '';
+    const cls = source === 'YouTube Music' ? 'tag' : 'tag yt';
+    return `<span class="${cls}">${escapeHtml(source)}</span>`;
+  }
+
+  const renderedRows = new Map();
+
+  function render(j) {
+    // Status messaging
+    if (j.status === 'fetching_playlist') {
+      setStatus('Fetching playlist from Spotify...');
+      setProgress(0, 0);
+    } else if (j.status === 'searching') {
+      setStatus(`Searching YouTube Music`);
+      setProgress(j.search_done_count, j.total);
+    } else if (j.status === 'ready') {
+      setStatus(`${j.total} tracks loaded. Review matches below, then click Download all.`);
+      setProgress(0, 0);
+    } else if (j.status === 'downloading') {
+      setStatus(`Downloading`);
+      setProgress(j.download_done, j.download_total);
+    } else if (j.status === 'done') {
+      setStatus(`Finished. Files saved to the downloads/ folder.`);
+      setProgress(j.download_total, j.download_total);
+    } else if (j.status === 'error') {
+      setStatus('Error: ' + (j.error || 'unknown'));
+      setProgress(0, 0);
+    }
+
+    // Bottom bar
+    if (j.tracks && j.tracks.length > 0) {
+      bottomBar.classList.add('show');
+      const active = j.tracks.filter(t => !t.skipped && t.search_done && t.current_candidate).length;
+      const skipped = j.tracks.filter(t => t.skipped).length;
+      const noMatch = j.tracks.filter(t => t.search_done && !t.current_candidate).length;
+      summary.innerHTML = `
+        <span><b>${active}</b> ready</span>
+        <span><b>${skipped}</b> skipped</span>
+        <span><b>${noMatch}</b> no match</span>
+        <span><b>${j.tracks.length}</b> total</span>
+      `;
+      downloadAllBtn.disabled = !(j.status === 'ready' && active > 0);
+      if (j.status === 'downloading' || j.status === 'done') downloadAllBtn.disabled = true;
+      logDetails.style.display = '';
+    }
+
+    if (!j.tracks) return;
+
+    // Parse log to mark rows OK/FAIL
+    const okSet = new Set();
+    const failSet = new Set();
+    for (const line of (j.log || [])) {
+      const m = line.match(/^(OK|FAIL)\s+(.+?)(?:\s+<-|\s+\(|$)/);
+      if (m) {
+        if (m[1] === 'OK') okSet.add(m[2].trim());
+        else failSet.add(m[2].trim());
+      }
+    }
+
+    for (const t of j.tracks) {
+      const label = `${t.artist} - ${t.title}`;
+      let row = renderedRows.get(t.index);
+      if (!row) {
+        row = document.createElement('div');
+        row.className = 'track-row';
+        row.dataset.index = t.index;
+        tracksDiv.appendChild(row);
+        renderedRows.set(t.index, row);
+      }
+
+      let cls = 'track-row';
+      let statusBadge = '';
+      if (t.skipped) {
+        cls += ' skipped';
+        statusBadge = '<span class="tag status-skip">skipped</span>';
+      }
+      if (j.current_download_index === t.index) {
+        cls += ' downloading';
+        statusBadge = '<span class="tag status-dl">downloading</span>';
+      } else if (okSet.has(label)) {
+        cls += ' done-ok';
+        statusBadge = '<span class="tag status-ok">downloaded</span>';
+      } else if (failSet.has(label)) {
+        cls += ' done-fail';
+        statusBadge = '<span class="tag status-fail">failed</span>';
+      }
+      row.className = cls;
+
+      const cand = t.current_candidate;
+      let candHtml;
+      if (cand) {
+        candHtml = `
+          <img class="thumb" src="${escapeHtml(cand.thumbnail || '')}" alt="">
+          <div class="yt-info">
+            <div class="title-line">${escapeHtml(cand.title || '')}${sourceTag(cand.source)}</div>
+            <div class="meta-line">${escapeHtml(cand.channel || '')} &middot; ${escapeHtml(cand.duration_str || '?')}</div>
+            <div class="pos-line">match ${t.candidate_index + 1} of ${t.candidate_count} &middot; <a href="${escapeHtml(cand.url || '#')}" target="_blank" rel="noopener">open</a></div>
+          </div>
+        `;
+      } else if (t.search_done) {
+        candHtml = `<div class="yt-info"><div class="no-match">No matches found on YouTube Music or YouTube.</div></div>`;
+      } else {
+        candHtml = `<div class="yt-info"><div class="searching-row">Searching...</div></div>`;
+      }
+
+      const canChange = (j.status === 'searching' || j.status === 'ready');
+      const hasPrev = t.candidate_index > 0;
+      const hasNext = t.candidate_index + 1 < t.candidate_count;
+
+      row.innerHTML = `
+        <div class="col-num">${t.index + 1}</div>
+        <div class="col-spotify">
+          <div class="title-line">${escapeHtml(t.title)} ${statusBadge}</div>
+          <div class="meta-line">${escapeHtml(t.artist)} &middot; ${fmtMs(t.duration_ms)}</div>
+        </div>
+        <div class="col-arrow">&rarr;</div>
+        <div class="col-yt">${candHtml}</div>
+        <div class="col-actions">
+          <div class="actions-row">
+            <button data-act="prev" ${(!canChange || !hasPrev) ? 'disabled' : ''}>&larr; prev</button>
+            <button data-act="next" ${(!canChange || !hasNext) ? 'disabled' : ''}>next &rarr;</button>
+          </div>
+          <button class="skip-btn" data-act="${t.skipped ? 'unskip' : 'skip'}" ${!canChange ? 'disabled' : ''}>
+            ${t.skipped ? 'Unskip' : 'Skip this track'}
+          </button>
+        </div>
+      `;
+      row.querySelectorAll('button[data-act]').forEach(btn => {
+        btn.onclick = () => trackAction(t.index, btn.dataset.act);
+      });
+    }
+
+    logEl.textContent = (j.log || []).join('\n');
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+</script>
+</body>
+</html>
